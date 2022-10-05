@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"github.com/JamesPEarly/loggly"
 	"github.com/jzelinskie/geddit"
+	"sort"
 	"time"
 )
 
 type Data struct {
-	Posts [5]Post
+	Posts []Post
 }
 
 type Post struct {
@@ -38,12 +39,12 @@ func main() {
 		submissions, _ := session.SubredditSubmissions("FloridaMan", geddit.NewSubmissions, options)
 
 		if len(submissions) == 0 {
-			break
+			continue
 		}
 
 		var data Data
 
-		for i, s := range submissions {
+		for _, s := range submissions {
 			post := Post{
 				FullID:  s.FullID,
 				Author:  s.Author,
@@ -52,10 +53,14 @@ func main() {
 				URL:     s.URL,
 			}
 
-			data.Posts[4-i] = post
+			data.Posts = append(data.Posts, post)
 		}
 
-		options = geddit.ListingOptions{Limit: 5, Before: data.Posts[2].FullID}
+		sort.Slice(data.Posts, func(i, j int) bool {
+			return data.Posts[i].Created < data.Posts[j].Created
+		})
+
+		options = geddit.ListingOptions{Limit: 5, Before: data.Posts[len(data.Posts)-1].FullID}
 		bytes, _ := json.MarshalIndent(data, "", "    ")
 
 		_ = logger.EchoSend("info", string(bytes))
