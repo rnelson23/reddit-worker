@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/JamesPEarly/loggly"
 	"github.com/jzelinskie/geddit"
+	"os"
 	"sort"
 	"time"
 )
@@ -24,16 +25,16 @@ func main() {
 	logger := loggly.New("worker")
 
 	session, _ := geddit.NewOAuthSession(
-		"sCjeFwY1yd98IFwM-VaIeQ",
-		"6LnIpUYTYePRJoay8RPn0qAhlz25BA",
+		os.Getenv("REDDIT_CLIENT_ID"),
+		os.Getenv("REDDIT_CLIENT_SECRET"),
 		"gedditAgent v1",
 		"http://redirect.url",
 	)
 
-	_ = session.LoginAuth("sen-senpai", "Squeek247")
+	_ = session.LoginAuth(os.Getenv("REDDIT_USERNAME"), os.Getenv("REDDIT_PASSWORD"))
 	_ = logger.EchoSend("info", "Ready!")
 
-	options := geddit.ListingOptions{Limit: 5, Before: "t3_x1zcfh"}
+	options := geddit.ListingOptions{Limit: 5, Before: "t3_xp2wy7"}
 
 	for range time.Tick(time.Second * 2) {
 		submissions, _ := session.SubredditSubmissions("FloridaMan", geddit.NewSubmissions, options)
