@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/JamesPEarly/loggly"
+	"github.com/joho/godotenv"
 	"github.com/jzelinskie/geddit"
 	"os"
 	"sort"
@@ -22,8 +23,9 @@ type Post struct {
 }
 
 func main() {
-	logger := loggly.New("reddit-worker")
+	_ = godotenv.Load()
 
+	logger := loggly.New("reddit-worker")
 	session, _ := geddit.NewOAuthSession(
 		os.Getenv("REDDIT_CLIENT_ID"),
 		os.Getenv("REDDIT_CLIENT_SECRET"),
