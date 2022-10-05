@@ -22,7 +22,7 @@ type Post struct {
 }
 
 func main() {
-	logger := loggly.New("worker")
+	logger := loggly.New("reddit-worker")
 
 	session, _ := geddit.NewOAuthSession(
 		os.Getenv("REDDIT_CLIENT_ID"),

@@ -1,4 +1,4 @@
-module worker
+module reddit-worker
 
 go 1.19
 
