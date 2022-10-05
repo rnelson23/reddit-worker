@@ -15,11 +15,12 @@ type Data struct {
 }
 
 type Post struct {
-	FullID  string
+	Title   string
+	Article string
+	Link    string
 	Author  string
 	Created float64
-	Title   string
-	URL     string
+	FullID  string
 }
 
 func main() {
@@ -49,11 +50,12 @@ func main() {
 
 		for _, s := range submissions {
 			post := Post{
-				FullID:  s.FullID,
+				Title:   s.Title,
+				Article: s.URL,
+				Link:    s.FullPermalink(),
 				Author:  s.Author,
 				Created: s.DateCreated,
-				Title:   s.Title,
-				URL:     s.URL,
+				FullID:  s.FullID,
 			}
 
 			data.Posts = append(data.Posts, post)
