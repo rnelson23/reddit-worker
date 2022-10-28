@@ -15,10 +15,6 @@ import (
 	"time"
 )
 
-type Data struct {
-	Posts []Post
-}
-
 type Post struct {
 	Title       string  `dynamodbav:"title"`
 	FullID      string  `dynamodbav:"name"`
@@ -28,14 +24,17 @@ type Post struct {
 	DateCreated float64 `dynamodbav:"created_utc"`
 }
 
-func main() {
+var db *dynamodb.Client
+var logger *loggly.ClientType
+var client *geddit.OAuthSession
+
+func init() {
 	_ = godotenv.Load()
 
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
-	db := dynamodb.NewFromConfig(cfg)
+	db = dynamodb.NewFromConfig(cfg)
 
-	logger := loggly.New("reddit-worker")
-	client, _ := geddit.NewOAuthSession(
+	client, _ = geddit.NewOAuthSession(
 		os.Getenv("REDDIT_CLIENT_ID"),
 		os.Getenv("REDDIT_CLIENT_SECRET"),
 		"gedditAgent v1",
@@ -43,23 +42,27 @@ func main() {
 	)
 
 	_ = client.LoginAuth(os.Getenv("REDDIT_USERNAME"), os.Getenv("REDDIT_PASSWORD"))
+
+	logger = loggly.New("reddit-worker")
 	_ = logger.EchoSend("info", "Ready!")
+}
 
-	options := geddit.ListingOptions{Before: getLastPost(db)}
+func main() {
+	options := geddit.ListingOptions{Before: getLastPost()}
 
-	for range time.Tick(time.Hour * 1) {
-		data := getPosts(client, db, options)
+	for range time.Tick(time.Second * 30) {
+		posts := getPosts(options)
 
-		if len(data.Posts) > 0 {
-			options = geddit.ListingOptions{Before: data.Posts[len(data.Posts)-1].FullID}
-			bytes, _ := json.MarshalIndent(data, "", "    ")
+		if len(posts) > 0 {
+			options = geddit.ListingOptions{Before: posts[len(posts)-1].FullID}
+			bytes, _ := json.MarshalIndent(posts, "", "    ")
 
 			_ = logger.EchoSend("info", string(bytes))
 		}
 	}
 }
 
-func getLastPost(db *dynamodb.Client) string {
+func getLastPost() string {
 	posts, _ := db.Scan(context.TODO(), &dynamodb.ScanInput{TableName: aws.String("rnelson3-reddit")})
 	var lastPost Post
 
@@ -75,21 +78,21 @@ func getLastPost(db *dynamodb.Client) string {
 	return lastPost.FullID
 }
 
-func getPosts(client *geddit.OAuthSession, db *dynamodb.Client, options geddit.ListingOptions) Data {
-	posts, _ := client.SubredditSubmissions("FloridaMan", geddit.NewSubmissions, options)
-	var data Data
+func getPosts(options geddit.ListingOptions) []Post {
+	submissions, _ := client.SubredditSubmissions("FloridaMan", geddit.NewSubmissions, options)
+	var posts []Post
 
-	for _, p := range posts {
+	for _, s := range submissions {
 		post := Post{
-			Title:       p.Title,
-			FullID:      p.FullID,
-			Author:      p.Author,
-			Permalink:   p.Permalink,
-			URL:         p.URL,
-			DateCreated: p.DateCreated,
+			Title:       s.Title,
+			FullID:      s.FullID,
+			Author:      s.Author,
+			Permalink:   s.Permalink,
+			URL:         s.URL,
+			DateCreated: s.DateCreated,
 		}
 
-		data.Posts = append(data.Posts, post)
+		posts = append(posts, post)
 
 		item, _ := attributevalue.MarshalMap(post)
 		_, _ = db.PutItem(context.TODO(), &dynamodb.PutItemInput{
@@ -98,9 +101,9 @@ func getPosts(client *geddit.OAuthSession, db *dynamodb.Client, options geddit.L
 		})
 	}
 
-	sort.Slice(data.Posts, func(i, j int) bool {
-		return data.Posts[i].DateCreated < data.Posts[j].DateCreated
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].DateCreated < posts[j].DateCreated
 	})
 
-	return data
+	return posts
 }
