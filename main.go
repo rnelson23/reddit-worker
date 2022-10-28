@@ -50,7 +50,7 @@ func init() {
 func main() {
 	options := geddit.ListingOptions{Before: getLastPost()}
 
-	for range time.Tick(time.Second * 30) {
+	for range time.Tick(time.Hour * 1) {
 		posts := getPosts(options)
 
 		if len(posts) > 0 {
