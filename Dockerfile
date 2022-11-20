@@ -1,6 +1,6 @@
 FROM golang as builder
 
-WORKDIR /reddit-worker
+WORKDIR /rnelson3-agent
 COPY . .
 
 RUN go mod tidy
@@ -10,8 +10,7 @@ FROM scratch
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-WORKDIR /reddit-worker
-COPY --from=builder /reddit-worker/app .
-COPY --from=builder /reddit-worker/.env .
+WORKDIR /rnelson3-agent
+COPY --from=builder /rnelson3-agent/app .
 
 CMD ["./app"]

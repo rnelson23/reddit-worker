@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/joho/godotenv"
 	"github.com/jzelinskie/geddit"
 	"os"
 	"sort"
@@ -29,8 +28,6 @@ var logger *loggly.ClientType
 var client *geddit.OAuthSession
 
 func init() {
-	_ = godotenv.Load()
-
 	cfg, _ := config.LoadDefaultConfig(context.TODO())
 	db = dynamodb.NewFromConfig(cfg)
 
@@ -43,7 +40,7 @@ func init() {
 
 	_ = client.LoginAuth(os.Getenv("REDDIT_USERNAME"), os.Getenv("REDDIT_PASSWORD"))
 
-	logger = loggly.New("reddit-worker")
+	logger = loggly.New("rnelson3-agent")
 	_ = logger.EchoSend("info", "Ready!")
 }
 
